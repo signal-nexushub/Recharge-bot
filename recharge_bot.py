@@ -860,11 +860,20 @@ def main():
             CallbackQueryHandler(button_handler, pattern="^recharge$")
         ],
         states={
-            VERIFY: [MessageHandler(filters.TEXT & ~filters.COMMAND, verify_answer)],
-            ASK_NUMBER: [MessageHandler(filters.TEXT & ~filters.COMMAND, ask_number)],
+            VERIFY: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND & ~filters.Regex("^☰ Menu$"), verify_answer)
+            ],
+            ASK_NUMBER: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND & ~filters.Regex("^☰ Menu$"), ask_number)
+            ],
         },
-        fallbacks=[CommandHandler("cancel", cancel)],
+        fallbacks=[
+            CommandHandler("cancel", cancel),
+            MessageHandler(filters.Regex("^☰ Menu$"), menu_button_handler),
+            CommandHandler("start", start),
+        ],
         per_message=False,
+        allow_reentry=True,
     )
 
     app.add_handler(conv)
