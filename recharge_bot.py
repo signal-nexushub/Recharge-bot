@@ -150,10 +150,12 @@ def channel_join_keyboard():
 
 def main_menu_keyboard():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("⚡ Recharge Karein", callback_data="recharge")],
-        [InlineKeyboardButton("👥 Referral Link", callback_data="referral"),
-         InlineKeyboardButton("💰 Mera Balance", callback_data="balance")],
-        [InlineKeyboardButton("ℹ️ Help & Guide", callback_data="help")]
+        [InlineKeyboardButton("⚡ Get Recharge", callback_data="recharge")],
+        [InlineKeyboardButton("💸 Earn ₹ Rupees", callback_data="earn")],
+        [InlineKeyboardButton("💰 My Balance", callback_data="balance"),
+         InlineKeyboardButton("👥 Refer & Earn", callback_data="referral")],
+        [InlineKeyboardButton("📊 My Stats", callback_data="stats"),
+         InlineKeyboardButton("ℹ️ Help", callback_data="help")]
     ])
 
 async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, edit=False):
@@ -165,12 +167,12 @@ async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, edi
     text = (
         f"👋 *Namaste, {user.first_name}!*\n\n"
         f"🎉 *Free Recharge Bot mein aapka swagat hai!*\n"
-        f"Apne doston ko refer karein aur muft mein recharge paayein.\n\n"
+        f"Apne doston ko refer karein aur free mein recharge paayein.\n\n"
         f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"💰 *Aapka Balance:*  ₹{balance:.2f}\n"
-        f"⭐ *Aapke Credits:*  {credits}\n"
+        f"💰 *Total Balance:*  ₹{balance:.2f}\n"
+        f"⭐ *Credits:*        {credits}\n"
         f"━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"💡 *Join Bonus:* ₹{JOIN_BONUS} | *1 Referral = ₹{CREDIT_VALUE} Balance*\n\n"
+        f"🎁 *Join Bonus:* ₹{JOIN_BONUS} | *1 Referral = ₹{CREDIT_VALUE}*\n\n"
         f"Neeche diye gaye options mein se chunein 👇"
     )
 
@@ -293,6 +295,62 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == "main_menu":
         await show_main_menu(update, context, edit=True)
 
+    # ── Earn Rupees ──────────────────────────────────────────────────────────
+    elif data == "earn":
+        bot_info = await context.bot.get_me()
+        ref_link = f"https://t.me/{bot_info.username}?start=ref_{user.id}"
+        text = (
+            f"💸 *Earn ₹ Rupees — Tarike*\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"🎁 *Join Bonus:*        ₹{JOIN_BONUS} _(ek baar)_\n"
+            f"👥 *Per Referral:*      ₹{CREDIT_VALUE}\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"*Kaise kamaayein?*\n\n"
+            f"1️⃣ Apna referral link copy karein\n"
+            f"2️⃣ Friends, family aur groups mein share karein\n"
+            f"3️⃣ Jab koi join kare → aapko ₹{CREDIT_VALUE} milega\n"
+            f"4️⃣ Balance se free recharge lein! 🎉\n\n"
+            f"🔗 *Aapka Referral Link:*\n"
+            f"`{ref_link}`"
+        )
+        await query.edit_message_text(
+            text, parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("👥 Refer & Earn", callback_data="referral"),
+                InlineKeyboardButton("🔙 Back", callback_data="main_menu")
+            ]])
+        )
+
+    # ── Stats ─────────────────────────────────────────────────────────────────
+    elif data == "stats":
+        user_data = get_user(user.id)
+        total_referrals = len(user_data.get("referrals", []))
+        referral_earnings = user_data.get("referral_earnings", 0)
+        join_bonus = JOIN_BONUS if user_data.get("join_bonus_given", False) else 0
+        total_earned = round(referral_earnings + join_bonus, 2)
+        text = (
+            f"📊 *My Stats — Poori Jaankari*\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"💵 *Total Balance:*       ₹{user_data['balance']:.2f}\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"🎁 *Join Bonus:*          ₹{join_bonus:.2f}\n"
+            f"👥 *Referral Earnings:*   ₹{referral_earnings:.2f}\n"
+            f"📈 *Total Earned:*        ₹{total_earned:.2f}\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"🔢 *Total Referrals:*     {total_referrals}\n"
+            f"⭐ *Credits:*             {user_data['credits']}\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"💡 *Har referral par ₹{CREDIT_VALUE} kamaayein!*\n"
+            f"Jitne zyada referrals, utna zyada balance! 🚀"
+        )
+        await query.edit_message_text(
+            text, parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("👥 Refer & Earn", callback_data="referral"),
+                InlineKeyboardButton("🔙 Back", callback_data="main_menu")
+            ]])
+        )
+
     # ── Balance ──────────────────────────────────────────────────────────────
     elif data == "balance":
         user_data = get_user(user.id)
@@ -355,7 +413,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"2️⃣ Apna referral link copy karein\n"
             f"3️⃣ Doston aur family mein share karein\n"
             f"4️⃣ Jab woh /start karein aur channel join karein → aapko *₹{CREDIT_VALUE}* milega\n"
-            f"5️⃣ Balance aane par *'Recharge Karein'* button dabayein\n"
+            f"5️⃣ Balance aane par *'Get Recharge'* button dabayein\n"
             f"6️⃣ Apna 10 digit mobile number enter karein\n"
             f"7️⃣ Apna operator chunein (Jio / Airtel / Vi / BSNL)\n"
             f"8️⃣ Plan chunein aur recharge ho jaayega!\n\n"
