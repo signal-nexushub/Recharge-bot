@@ -310,7 +310,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = (
             f"💸 *Earn ₹ Rupees — Tarike*\n\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"🎁 *Join Bonus:*        ₹{JOIN_BONUS} _(ek baar)_\n"
+            f"🎁 *Join Bonus:*        ₹{JOIN_BONUS}\n"
             f"👥 *Per Referral:*      ₹{CREDIT_VALUE}\n"
             f"━━━━━━━━━━━━━━━━━━━━\n\n"
             f"*Kaise kamaayein?*\n\n"
@@ -471,8 +471,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         buttons = []
         for i, plan in enumerate(plans):
             affordable = "✅" if balance >= plan["price"] else "❌"
+            short_name = f"₹{plan['price']} — {plan['name'].split('—')[1].strip()[:30]}..." if '—' in plan['name'] else plan['name'][:35] + "..."
             buttons.append([InlineKeyboardButton(
-                f"{affordable} {plan['name']}",
+                f"{affordable} {short_name}",
                 callback_data=f"plan_{i}"
             )])
         buttons.append([InlineKeyboardButton("🔙 Wapas Jaayein", callback_data="recharge")])
@@ -495,32 +496,32 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         plan = PLANS[operator][plan_idx]
         user_data = get_user(user.id)
         balance = user_data["balance"]
+        need = round(plan["price"] - balance, 2)
 
-        if balance < plan["price"]:
-            await query.answer(
-                f"❌ Balance Kam Hai!\n\nIs plan ke liye ₹{plan['price']} chahiye.\nAapka total balance ₹{balance:.2f} hai.\n\nZyada referrals karen aur balance badhayein!",
-                show_alert=True
-            )
-            return
-
-        # Confirm recharge
         context.user_data["selected_plan"] = plan
+        context.user_data["plan_idx"] = plan_idx
+
+        if balance >= plan["price"]:
+            balance_line = f"💳 *Recharge ke Baad:* ₹{balance - plan['price']:.2f}"
+        else:
+            balance_line = f"⚠️ *Low Balance* — Need ₹{need:.2f} more"
+
         await query.edit_message_text(
-            f"🔍 *Recharge Confirm Karein — Step 3 of 3*\n\n"
+            f"📋 *Plan Details*\n\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
             f"📱 *Mobile Number:*    `{mobile}`\n"
             f"📡 *Operator:*          {operator}\n"
-            f"📦 *Plan:*              {plan['name']}\n"
+            f"📦 *Plan:*\n{plan['name']}\n"
             f"💵 *Recharge Amount:*  ₹{plan['price']}\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
             f"💰 *Total Balance:*     ₹{balance:.2f}\n"
-            f"💳 *Recharge ke Baad:* ₹{balance - plan['price']:.2f}\n"
+            f"{balance_line}\n"
             f"━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"Kya aap is recharge ko confirm karte hain?",
+            f"Neeche se option chunein 👇",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("✅ Haan, Recharge Karein", callback_data="confirm_recharge")],
-                [InlineKeyboardButton("❌ Cancel", callback_data="main_menu")]
+                [InlineKeyboardButton("⚡ Recharge", callback_data="confirm_recharge")],
+                [InlineKeyboardButton("❌ Cancel", callback_data=f"op_{operator}")]
             ])
         )
 
@@ -533,7 +534,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         balance = user_data["balance"]
 
         if balance < plan["price"]:
-            await query.answer("❌ Balance Kam Ho Gaya! Pehle referrals karein.", show_alert=True)
+            need = round(plan["price"] - balance, 2)
+            await query.answer(f"⚠️ Low Balance — Need ₹{need:.2f} more\n\nReferrals karke balance badhayein!", show_alert=True)
             return
 
         # Deduct balance
