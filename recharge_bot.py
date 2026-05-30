@@ -6,7 +6,7 @@ Requirements: pip install python-telegram-bot==20.7
 import logging
 import os
 import json
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
 from telegram.ext import (
     Application, CommandHandler, CallbackQueryHandler,
     MessageHandler, ContextTypes, ConversationHandler, filters
@@ -148,6 +148,13 @@ def channel_join_keyboard():
 #  MAIN MENU
 # ═══════════════════════════════════════════════════════════════════════════════
 
+def bottom_menu_keyboard():
+    return ReplyKeyboardMarkup(
+        [["☰ Menu"]],
+        resize_keyboard=True,
+        is_persistent=True
+    )
+
 def main_menu_keyboard():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("⚡ Get Recharge", callback_data="recharge")],
@@ -182,6 +189,7 @@ async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, edi
         )
     else:
         msg = update.message or update.callback_query.message
+        await msg.reply_text("☰", reply_markup=bottom_menu_keyboard())
         await msg.reply_text(text, parse_mode="Markdown", reply_markup=main_menu_keyboard())
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -589,7 +597,10 @@ async def ask_number(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     return ConversationHandler.END
 
-async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def menu_button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await show_main_menu(update, context)
+
+
     await update.message.reply_text(
         "❌ *Recharge Raddh Kar Di Gayi.*\n\nMain Menu se dobara shuru kar sakte hain.",
         parse_mode="Markdown",
@@ -619,6 +630,7 @@ def main():
     )
 
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & filters.Regex("^☰ Menu$"), menu_button_handler))
     app.add_handler(conv)
     app.add_handler(CallbackQueryHandler(button_handler))
 
