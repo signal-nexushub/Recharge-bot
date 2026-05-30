@@ -532,8 +532,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text,
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("⚡ Recharge", callback_data="recharge"),
-                 InlineKeyboardButton("🔙 Back", callback_data="main_menu")]
+                [InlineKeyboardButton("🔙 Back", callback_data="main_menu"),
+                 InlineKeyboardButton("⚡ Recharge", callback_data="recharge")]
             ])
         )
 
