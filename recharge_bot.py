@@ -163,7 +163,7 @@ async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, edi
     credits = data["credits"]
 
     text = (
-        f"👋 *Assalam-o-Alaikum, {user.first_name}!*\n\n"
+        f"👋 *Namaste, {user.first_name}!*\n\n"
         f"🎉 *Free Recharge Bot mein aapka swagat hai!*\n"
         f"Apne doston ko refer karein aur muft mein recharge paayein.\n\n"
         f"━━━━━━━━━━━━━━━━━━━━\n"
@@ -213,7 +213,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     joined = await is_member(context.bot, user.id)
     if not joined:
         await update.message.reply_text(
-            f"👋 *Assalam-o-Alaikum, {user.first_name}!*\n\n"
+            f"👋 *Namaste, {user.first_name}!*\n\n"
             f"🔒 *Bot Access ke liye Channel Join Zaruri Hai*\n\n"
             f"Hamara channel join karein aur tazaa updates, offers aur "
             f"recharge alerts sabse pehle paayein!\n\n"
@@ -384,8 +384,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await query.edit_message_text(
             "📱 *Mobile Recharge — Step 1 of 3*\n\n"
-            "Apna *10 digit mobile number* darj karein:\n\n"
-            "📝 _(Misal ke taur par: 9876543210)_",
+            "Apna *Indian 10 digit mobile number* darj karein:\n"
+            "_(Only for Indian numbers)_\n\n"
+            "📝 _(For example: 9876543210)_",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([[
                 InlineKeyboardButton("❌ Cancel", callback_data="main_menu")
@@ -504,11 +505,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def ask_number(update: Update, context: ContextTypes.DEFAULT_TYPE):
     number = update.message.text.strip()
-    if not (number.isdigit() and len(number) == 10):
+    # Indian mobile numbers: 10 digits, starting with 6, 7, 8, or 9
+    if not (number.isdigit() and len(number) == 10 and number[0] in "6789"):
         await update.message.reply_text(
             "❌ *Galat Number Darj Kiya!*\n\n"
-            "Kripya apna *10 digit ka sahih mobile number* darj karein.\n\n"
-            "📝 _(Misal ke taur par: 9876543210)_",
+            "Kripya apna *Indian 10 digit mobile number* darj karein.\n"
+            "_(Sirf Indian numbers allowed hain — 6, 7, 8, ya 9 se shuru hone wale)_\n\n"
+            "📝 _(For example: 9876543210)_",
             parse_mode="Markdown"
         )
         return ASK_NUMBER
