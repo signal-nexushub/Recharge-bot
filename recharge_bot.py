@@ -175,11 +175,21 @@ def get_user(user_id: int):
             new_user.pop("_id")
             return new_user
         doc.pop("_id")
+        # Purane users ke liye missing fields add karo
+        defaults = DEFAULT_USER()
+        for key, val in defaults.items():
+            if key not in doc:
+                doc[key] = val
         return doc
     db = load_db()
     if uid not in db:
         db[uid] = DEFAULT_USER()
         save_db(db)
+    # Purane users ke liye missing fields add karo
+    defaults = DEFAULT_USER()
+    for key, val in defaults.items():
+        if key not in db[uid]:
+            db[uid][key] = val
     return db[uid]
 
 def update_user(user_id: int, data: dict):
@@ -196,13 +206,13 @@ def update_user(user_id: int, data: dict):
 
 def add_balance(user_id: int, amount: float):
     user = get_user(user_id)
-    new_balance = round(user["balance"] + amount, 2)
+    new_balance = round(user.get("balance", 0) + amount, 2)
     update_user(user_id, {"balance": new_balance})
     return new_balance
 
 def deduct_balance(user_id: int, amount: float):
     user = get_user(user_id)
-    new_balance = round(user["balance"] - amount, 2)
+    new_balance = round(user.get("balance", 0) - amount, 2)
     update_user(user_id, {"balance": new_balance})
     return new_balance
 
