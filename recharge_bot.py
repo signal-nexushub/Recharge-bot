@@ -450,7 +450,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await query.edit_message_text(
             "📱 *Mobile Recharge — Step 1 of 3*\n\n"
-            "Apna *Indian 10 digit mobile number* darj karein:\n"
+            "Send Your *10 Digit Mobile Number* Without (*+91*) Country Code:\n"
             "_(Only for Indian numbers)_\n\n"
             "📝 _(For example: 9876543210)_",
             parse_mode="Markdown",
@@ -575,7 +575,7 @@ async def ask_number(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not (number.isdigit() and len(number) == 10 and number[0] in "6789"):
         await update.message.reply_text(
             "❌ *Galat Number Darj Kiya!*\n\n"
-            "Kripya apna *Indian 10 digit mobile number* darj karein.\n"
+            "Send Your *10 Digit Mobile Number* Without (*+91*) Country Code:\n"
             "_(Sirf Indian numbers allowed hain — 6, 7, 8, ya 9 se shuru hone wale)_\n\n"
             "📝 _(For example: 9876543210)_",
             parse_mode="Markdown"
