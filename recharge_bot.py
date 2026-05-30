@@ -6,6 +6,7 @@ Requirements: pip install python-telegram-bot==20.7
 import logging
 import os
 import json
+import random
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
 from telegram.ext import (
     Application, CommandHandler, CallbackQueryHandler,
@@ -21,7 +22,7 @@ JOIN_BONUS      = 10                # channel join karne par ₹10 (sirf ek baar
 DB_FILE         = "users.json"      # Data store (simple file-based)
 
 # ─── CONVERSATION STATES ──────────────────────────────────────────────────────
-ASK_NUMBER, ASK_OPERATOR, SHOW_PLANS = range(3)
+VERIFY, ASK_NUMBER, ASK_OPERATOR, SHOW_PLANS = range(4)
 
 # ─── LOGGING ──────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -80,6 +81,45 @@ PLANS = {
         {"name": "₹666 — 1.5GB/Day | Unlimited Calls | 84 Days  [4G]",                    "price": 666},
         {"name": "₹1499 — 2GB/Day | Unlimited Calls | 180 Days  [4G]",                    "price": 1499},
         {"name": "₹2399 — 1.5GB/Day | Unlimited Calls | 365 Days  [4G]",                  "price": 2399},
+    ],
+}
+
+DATA_PACKS = {
+    "Jio": [
+        {"name": "1GB Data | 1 Day Validity",         "price": 15},
+        {"name": "2GB Data | 1 Day Validity",         "price": 25},
+        {"name": "6GB Data | 7 Days Validity",        "price": 51},
+        {"name": "12GB Data | 15 Days Validity",      "price": 91},
+        {"name": "25GB Data | 30 Days Validity",      "price": 151},
+        {"name": "50GB Data | 30 Days Validity",      "price": 251},
+        {"name": "100GB Data | 30 Days Validity",     "price": 351},
+    ],
+    "Airtel": [
+        {"name": "1GB Data | 1 Day Validity",         "price": 19},
+        {"name": "3GB Data | 3 Days Validity",        "price": 48},
+        {"name": "6GB Data | 7 Days Validity",        "price": 98},
+        {"name": "12GB Data | 15 Days Validity",      "price": 178},
+        {"name": "25GB Data | 30 Days Validity",      "price": 248},
+        {"name": "50GB Data | 30 Days Validity",      "price": 448},
+        {"name": "100GB Data | 30 Days Validity",     "price": 698},
+    ],
+    "Vi": [
+        {"name": "1GB Data | 1 Day Validity",         "price": 16},
+        {"name": "2GB Data | 2 Days Validity",        "price": 26},
+        {"name": "6GB Data | 7 Days Validity",        "price": 56},
+        {"name": "12GB Data | 15 Days Validity",      "price": 96},
+        {"name": "25GB Data | 30 Days Validity",      "price": 156},
+        {"name": "50GB Data | 30 Days Validity",      "price": 256},
+        {"name": "100GB Data | 30 Days Validity",     "price": 456},
+    ],
+    "BSNL": [
+        {"name": "1GB Data | 1 Day Validity",         "price": 7},
+        {"name": "3GB Data | 3 Days Validity",        "price": 16},
+        {"name": "5GB Data | 7 Days Validity",        "price": 26},
+        {"name": "10GB Data | 15 Days Validity",      "price": 46},
+        {"name": "25GB Data | 30 Days Validity",      "price": 96},
+        {"name": "50GB Data | 30 Days Validity",      "price": 186},
+        {"name": "100GB Data | 30 Days Validity",     "price": 336},
     ],
 }
 
@@ -208,6 +248,30 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except ValueError:
             pass
 
+    # Save referral and args for after verification
+    context.user_data["start_args"] = args
+    context.user_data["pending_referrer_raw"] = referrer_id
+
+    # Human verification — math question
+    db = load_db()
+    uid = str(user.id)
+    user_data_check = db.get(uid, {})
+    if not user_data_check.get("verified", False):
+        a = random.randint(1, 9)
+        b = random.randint(1, 9)
+        context.user_data["verify_answer"] = a + b
+        await update.message.reply_text(
+            f"🔐 *Human Verification*\n\n"
+            f"Bot access karne ke liye ek simple sawaal ka jawab dein:\n\n"
+            f"*{a} + {b} = ?*\n\n"
+            f"_Apna jawab type karein_ 👇",
+            parse_mode="Markdown"
+        )
+        return VERIFY
+
+    await _post_verify_start(update, context, user, referrer_id)
+
+async def _post_verify_start(update, context, user, referrer_id):
     # Register user if new
     db = load_db()
     uid = str(user.id)
@@ -242,6 +306,31 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         update_user(user.id, {"join_bonus_given": True})
 
     await show_main_menu(update, context)
+
+async def verify_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    answer = update.message.text.strip()
+    correct = context.user_data.get("verify_answer")
+
+    if not answer.isdigit() or int(answer) != correct:
+        a = random.randint(1, 9)
+        b = random.randint(1, 9)
+        context.user_data["verify_answer"] = a + b
+        await update.message.reply_text(
+            f"❌ *Galat Jawab!*\n\n"
+            f"Dobara try karein:\n\n"
+            f"*{a} + {b} = ?*",
+            parse_mode="Markdown"
+        )
+        return VERIFY
+
+    # Mark as verified
+    update_user(user.id, {"verified": True})
+    await update.message.reply_text("✅ *Verification Successful!*", parse_mode="Markdown")
+
+    referrer_id = context.user_data.get("pending_referrer_raw")
+    await _post_verify_start(update, context, user, referrer_id)
+    return ConversationHandler.END
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  CALLBACK HANDLERS
@@ -476,6 +565,21 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data.startswith("op_"):
         operator = data.replace("op_", "")
         context.user_data["operator"] = operator
+        await query.edit_message_text(
+            f"📡 *{operator} — Pack Chunein*\n\n"
+            f"Aap kaunsa pack lena chahte hain?",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("📞 Recharge Pack", callback_data=f"recharge_pack_{operator}")],
+                [InlineKeyboardButton("📶 Data Pack", callback_data=f"data_pack_{operator}")],
+                [InlineKeyboardButton("🔙 Wapas Jaayein", callback_data="recharge")]
+            ])
+        )
+
+    # ── Recharge Pack List ────────────────────────────────────────────────────
+    elif data.startswith("recharge_pack_"):
+        operator = data.replace("recharge_pack_", "")
+        context.user_data["operator"] = operator
         plans = PLANS.get(operator, [])
         user_data = get_user(user.id)
         balance = user_data["balance"]
@@ -488,7 +592,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"{affordable} {short_name}",
                 callback_data=f"plan_{i}"
             )])
-        buttons.append([InlineKeyboardButton("🔙 Wapas Jaayein", callback_data="recharge")])
+        buttons.append([InlineKeyboardButton("🔙 Wapas Jaayein", callback_data=f"op_{operator}")])
 
         await query.edit_message_text(
             f"📋 *{operator} — Recharge Plans*\n\n"
@@ -498,6 +602,70 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"Apna plan chunein 👇",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup(buttons)
+        )
+
+    # ── Data Pack List ────────────────────────────────────────────────────────
+    elif data.startswith("data_pack_"):
+        operator = data.replace("data_pack_", "")
+        context.user_data["operator"] = operator
+        packs = DATA_PACKS.get(operator, [])
+        user_data = get_user(user.id)
+        balance = user_data["balance"]
+
+        buttons = []
+        for i, pack in enumerate(packs):
+            affordable = "✅" if balance >= pack["price"] else "❌"
+            buttons.append([InlineKeyboardButton(
+                f"{affordable} ₹{pack['price']} — {pack['name']}",
+                callback_data=f"dataplan_{i}"
+            )])
+        buttons.append([InlineKeyboardButton("🔙 Wapas Jaayein", callback_data=f"op_{operator}")])
+
+        await query.edit_message_text(
+            f"📶 *{operator} — Data Packs*\n\n"
+            f"💰 *Aapka Total Balance:*  ₹{balance:.2f}\n\n"
+            f"✅ = Aap yeh pack le sakte hain\n"
+            f"❌ = Is pack ke liye balance kam hai\n\n"
+            f"Apna pack chunein 👇",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup(buttons)
+        )
+
+    # ── Data Plan Selected ────────────────────────────────────────────────────
+    elif data.startswith("dataplan_"):
+        plan_idx = int(data.replace("dataplan_", ""))
+        operator = context.user_data.get("operator")
+        mobile = context.user_data.get("mobile")
+        pack = DATA_PACKS[operator][plan_idx]
+        user_data = get_user(user.id)
+        balance = user_data["balance"]
+        need = round(pack["price"] - balance, 2)
+
+        context.user_data["selected_plan"] = pack
+        context.user_data["plan_idx"] = plan_idx
+
+        if balance >= pack["price"]:
+            balance_line = f"💳 *Recharge ke Baad:* ₹{balance - pack['price']:.2f}"
+        else:
+            balance_line = f"⚠️ *Low Balance* — Need ₹{need:.2f} more"
+
+        await query.edit_message_text(
+            f"📶 *Data Pack Details*\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"📱 *Mobile Number:*    `{mobile}`\n"
+            f"📡 *Operator:*          {operator}\n"
+            f"📦 *Pack:*\n{pack['name']}\n"
+            f"💵 *Amount:*           ₹{pack['price']}\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"💰 *Total Balance:*     ₹{balance:.2f}\n"
+            f"{balance_line}\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"Neeche se option chunein 👇",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("⚡ Recharge", callback_data="confirm_recharge")],
+                [InlineKeyboardButton("❌ Cancel", callback_data=f"data_pack_{operator}")]
+            ])
         )
 
     # ── Plan Selected ─────────────────────────────────────────────────────────
@@ -685,19 +853,22 @@ def main():
 
     app = Application.builder().token(BOT_TOKEN).build()
 
-    # Conversation handler for number input
+    # Conversation handler for verification + number input
     conv = ConversationHandler(
-        entry_points=[CallbackQueryHandler(button_handler, pattern="^recharge$")],
+        entry_points=[
+            CommandHandler("start", start),
+            CallbackQueryHandler(button_handler, pattern="^recharge$")
+        ],
         states={
+            VERIFY: [MessageHandler(filters.TEXT & ~filters.COMMAND, verify_answer)],
             ASK_NUMBER: [MessageHandler(filters.TEXT & ~filters.COMMAND, ask_number)],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
         per_message=False,
     )
 
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & filters.Regex("^☰ Menu$"), menu_button_handler))
     app.add_handler(conv)
+    app.add_handler(MessageHandler(filters.TEXT & filters.Regex("^☰ Menu$"), menu_button_handler))
     app.add_handler(CallbackQueryHandler(button_handler))
 
     print("✅ Recharge Bot chalu ho gaya!")
