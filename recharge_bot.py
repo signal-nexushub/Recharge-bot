@@ -14,8 +14,8 @@ from telegram.ext import (
 
 # ─── CONFIG ───────────────────────────────────────────────────────────────────
 BOT_TOKEN       = os.environ.get("BOT_TOKEN", "YOUR_BOT_TOKEN_HERE")
-CHANNEL_ID      = "@your_channel"   # Apna channel username daalen, e.g. "@mychannel"
-ADMIN_ID        = 123456789         # Apna Telegram User ID daalen
+CHANNEL_ID      = "@nexuspredictionss"
+ADMIN_ID        = 1522324770
 CREDIT_VALUE    = 30                # 1 credit = ₹30
 DB_FILE         = "users.json"      # Data store (simple file-based)
 
