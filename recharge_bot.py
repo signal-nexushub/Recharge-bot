@@ -213,13 +213,22 @@ async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, edi
 
     text = (
         f"👋 *Namaste, {user.first_name}!*\n\n"
-        f"🎉 *Free Recharge Bot mein aapka swagat hai!*\n"
-        f"Apne doston ko refer karein aur free mein recharge paayein.\n\n"
+        f"⚡ *Free - Recharge Bot*\n\n"
+        f"🎁 Earn free mobile recharge by simply inviting your friends! 🎉\n\n"
+        f"✅ *How it works:*\n"
+        f"• Join the bot & get ₹{JOIN_BONUS} instant bonus\n"
+        f"• Share your referral link with friends\n"
+        f"• Each friend who joins = ₹{CREDIT_VALUE} added to your balance\n"
+        f"• Use your balance to recharge any number — Jio, Airtel, Vi or BSNL\n\n"
+        f"📦 *What we offer:*\n"
+        f"• Full recharge plans with data, calls & validity\n"
+        f"• Data top-up packs for all operators\n"
+        f"• Instant balance update on every referral!\n\n"
+        f"🔒 100% Free | No hidden charges | Secure & Fast⚡\n\n"
         f"━━━━━━━━━━━━━━━━━━━━\n"
         f"💰 *Total Balance:*  ₹{balance:.2f}\n"
         f"⭐ *Credits:*        {credits}\n"
         f"━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"🎁 *Join Bonus:* ₹{JOIN_BONUS} | *1 Referral = ₹{CREDIT_VALUE}*\n\n"
         f"Neeche diye gaye options mein se chunein 👇"
     )
 
