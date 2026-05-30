@@ -16,7 +16,8 @@ from telegram.ext import (
 BOT_TOKEN       = os.environ.get("BOT_TOKEN", "YOUR_BOT_TOKEN_HERE")
 CHANNEL_ID      = "@nexuspredictionss"
 ADMIN_ID        = 1522324770
-CREDIT_VALUE    = 30                # 1 credit = ₹30
+CREDIT_VALUE    = 20                # 1 referral = ₹20 balance
+JOIN_BONUS      = 10                # channel join karne par ₹10 (sirf ek baar)
 DB_FILE         = "users.json"      # Data store (simple file-based)
 
 # ─── CONVERSATION STATES ──────────────────────────────────────────────────────
@@ -32,40 +33,53 @@ logger = logging.getLogger(__name__)
 # ─── RECHARGE PLANS ───────────────────────────────────────────────────────────
 PLANS = {
     "Jio": [
-        {"name": "₹29 — 1.5GB/Day | 1 Day",        "price": 29},
-        {"name": "₹179 — 2GB/Day | 28 Days",        "price": 179},
-        {"name": "₹239 — 1.5GB/Day | 28 Days",      "price": 239},
-        {"name": "₹299 — 2GB/Day | 28 Days",        "price": 299},
-        {"name": "₹399 — 2.5GB/Day | 28 Days",      "price": 399},
-        {"name": "₹555 — 2GB/Day | 84 Days",        "price": 555},
-        {"name": "₹999 — 2GB/Day | 365 Days",       "price": 999},
+        {"name": "₹155 — 2GB Total | Unlimited Calls | 28 Days",                          "price": 155},
+        {"name": "₹209 — 1GB/Day | Unlimited Calls | 28 Days",                            "price": 209},
+        {"name": "₹239 — 1.5GB/Day | Unlimited Calls | 28 Days",                          "price": 239},
+        {"name": "₹299 — 2GB/Day | Unlimited Calls | 28 Days",                            "price": 299},
+        {"name": "₹349 — 2.5GB/Day + Unlimited 5G | Unlimited Calls | 28 Days",           "price": 349},
+        {"name": "₹399 — 3GB/Day + Unlimited 5G | Unlimited Calls | 28 Days",             "price": 399},
+        {"name": "₹500 — 2GB/Day + Unlimited 5G + OTT Bundle | 28 Days",                  "price": 500},
+        {"name": "₹533 — 2GB/Day + Unlimited 5G | Unlimited Calls | 56 Days",             "price": 533},
+        {"name": "₹719 — 1.5GB/Day | Unlimited Calls | 84 Days",                          "price": 719},
+        {"name": "₹839 — 2GB/Day + Unlimited 5G | Unlimited Calls | 84 Days",             "price": 839},
+        {"name": "₹2999 — 2.5GB/Day + Unlimited 5G | Unlimited Calls | 365 Days",         "price": 2999},
+        {"name": "₹3599 — 2.5GB/Day + Unlimited 5G + OTT + Gemini AI | 365 Days",        "price": 3599},
     ],
     "Airtel": [
-        {"name": "₹19 — 200MB | 1 Day",             "price": 19},
-        {"name": "₹179 — 1.5GB/Day | 28 Days",      "price": 179},
-        {"name": "₹249 — 2GB/Day | 28 Days",        "price": 249},
-        {"name": "₹299 — 2GB/Day | 28 Days",        "price": 299},
-        {"name": "₹359 — 2.5GB/Day | 28 Days",      "price": 359},
-        {"name": "₹549 — 2GB/Day | 84 Days",        "price": 549},
-        {"name": "₹1099 — 2GB/Day | 365 Days",      "price": 1099},
+        {"name": "₹199 — 2GB Total | Unlimited Calls | 28 Days",                          "price": 199},
+        {"name": "₹299 — 1GB/Day | Unlimited Calls | 28 Days",                            "price": 299},
+        {"name": "₹349 — 1.5GB/Day | Unlimited Calls | 28 Days",                          "price": 349},
+        {"name": "₹379 — 2GB/Day + Unlimited 5G | Unlimited Calls | 30 Days",             "price": 379},
+        {"name": "₹409 — 2.5GB/Day + Unlimited 5G | Unlimited Calls | 28 Days",           "price": 409},
+        {"name": "₹449 — 3GB/Day + Unlimited 5G | Unlimited Calls | 28 Days",             "price": 449},
+        {"name": "₹509 — 2GB/Day + Unlimited 5G | Unlimited Calls | 56 Days",             "price": 509},
+        {"name": "₹899 — 1.5GB/Day | Unlimited Calls | 84 Days",                          "price": 899},
+        {"name": "₹979 — 2GB/Day + Unlimited 5G | Unlimited Calls | 84 Days",             "price": 979},
+        {"name": "₹1999 — 2GB/Day + Unlimited 5G | Unlimited Calls | 365 Days",           "price": 1999},
+        {"name": "₹3599 — 2.5GB/Day + Unlimited 5G + OTT | Unlimited Calls | 365 Days",  "price": 3599},
     ],
     "Vi": [
-        {"name": "₹19 — 200MB | 1 Day",             "price": 19},
-        {"name": "₹169 — 1GB/Day | 28 Days",        "price": 169},
-        {"name": "₹229 — 1.5GB/Day | 28 Days",      "price": 229},
-        {"name": "₹299 — 2GB/Day | 28 Days",        "price": 299},
-        {"name": "₹449 — 2.5GB/Day | 56 Days",      "price": 449},
-        {"name": "₹599 — 2GB/Day | 84 Days",        "price": 599},
-        {"name": "₹1099 — 1.5GB/Day | 365 Days",    "price": 1099},
+        {"name": "₹349 — 1.5GB/Day | Unlimited Calls | 28 Days",                          "price": 349},
+        {"name": "₹365 — 2GB/Day + 5G | Unlimited Calls | 28 Days",                       "price": 365},
+        {"name": "₹408 — 2GB/Day + 5G + SonyLIV | Unlimited Calls | 28 Days",             "price": 408},
+        {"name": "₹409 — 2.5GB/Day + 5G | Unlimited Calls | 28 Days",                    "price": 409},
+        {"name": "₹449 — 3GB/Day + 5G + OTT Bundle | Unlimited Calls | 28 Days",          "price": 449},
+        {"name": "₹649 — 2GB/Day + 5G | Unlimited Calls | 56 Days",                       "price": 649},
+        {"name": "₹859 — 1.5GB/Day | Unlimited Calls | 84 Days",                          "price": 859},
+        {"name": "₹979 — 2GB/Day + 5G + OTT | Unlimited Calls | 84 Days",                "price": 979},
+        {"name": "₹998 — 2GB/Day + 5G + SonyLIV | Unlimited Calls | 84 Days",            "price": 998},
+        {"name": "₹3599 — 2GB/Day + 5G | Unlimited Calls | 365 Days",                    "price": 3599},
     ],
     "BSNL": [
-        {"name": "₹22 — 100MB | 1 Day",             "price": 22},
-        {"name": "₹108 — 1GB/Day | 28 Days",        "price": 108},
-        {"name": "₹197 — 2GB/Day | 28 Days",        "price": 197},
-        {"name": "₹247 — 2GB/Day | 28 Days",        "price": 247},
-        {"name": "₹319 — 3GB/Day | 30 Days",        "price": 319},
-        {"name": "₹599 — 2GB/Day | 90 Days",        "price": 599},
-        {"name": "₹1999 — 2GB/Day | 365 Days",      "price": 1999},
+        {"name": "₹153 — 1GB/Day | Unlimited Calls | 24 Days  [4G]",                      "price": 153},
+        {"name": "₹187 — 2GB/Day | Unlimited Calls | 28 Days  [4G]",                      "price": 187},
+        {"name": "₹247 — 2GB/Day | Unlimited Calls | 30 Days  [4G]",                      "price": 247},
+        {"name": "₹319 — 3GB/Day | Unlimited Calls | 28 Days  [4G]",                      "price": 319},
+        {"name": "₹395 — 3GB/Day | Unlimited Calls | 30 Days  [4G]",                      "price": 395},
+        {"name": "₹666 — 1.5GB/Day | Unlimited Calls | 84 Days  [4G]",                    "price": 666},
+        {"name": "₹1499 — 2GB/Day | Unlimited Calls | 180 Days  [4G]",                    "price": 1499},
+        {"name": "₹2399 — 1.5GB/Day | Unlimited Calls | 365 Days  [4G]",                  "price": 2399},
     ],
 }
 
@@ -89,7 +103,7 @@ def get_user(user_id: int):
     db = load_db()
     uid = str(user_id)
     if uid not in db:
-        db[uid] = {"credits": 0, "balance": 0, "referrals": [], "referred_by": None}
+        db[uid] = {"credits": 0, "balance": 0, "referral_earnings": 0, "referrals": [], "referred_by": None, "join_bonus_given": False}
         save_db(db)
     return db[uid]
 
@@ -97,7 +111,7 @@ def update_user(user_id: int, data: dict):
     db = load_db()
     uid = str(user_id)
     if uid not in db:
-        db[uid] = {"credits": 0, "balance": 0, "referrals": [], "referred_by": None}
+        db[uid] = {"credits": 0, "balance": 0, "referral_earnings": 0, "referrals": [], "referred_by": None, "join_bonus_given": False}
     db[uid].update(data)
     save_db(db)
 
@@ -156,7 +170,7 @@ async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, edi
         f"💰 *Aapka Balance:*  ₹{balance:.2f}\n"
         f"⭐ *Aapke Credits:*  {credits}\n"
         f"━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"💡 *1 Referral = 1 Credit = ₹{CREDIT_VALUE} Balance*\n\n"
+        f"💡 *Join Bonus:* ₹{JOIN_BONUS} | *1 Referral = ₹{CREDIT_VALUE} Balance*\n\n"
         f"Neeche diye gaye options mein se chunein 👇"
     )
 
@@ -191,41 +205,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_data = get_user(user.id)  # creates if not exists
 
-    # Credit referrer only if:
-    # 1. User is new
-    # 2. Referrer exists
-    # 3. User is not referring himself
-    # 4. Not already referred
+    # Referral ID temporarily save karein — credit tab milega jab user channel join kare
     if is_new and referrer_id and referrer_id != user.id and not user_data.get("referred_by"):
-        referrer_data = get_user(referrer_id)
-
-        # Mark this user as referred
-        update_user(user.id, {"referred_by": referrer_id})
-
-        # Add credit + balance to referrer
-        new_credits = referrer_data["credits"] + 1
-        new_balance = round(referrer_data["balance"] + CREDIT_VALUE, 2)
-        referrals = referrer_data.get("referrals", [])
-        referrals.append(user.id)
-        update_user(referrer_id, {
-            "credits": new_credits,
-            "balance": new_balance,
-            "referrals": referrals
-        })
-
-        # Notify referrer
-        try:
-            await context.bot.send_message(
-                referrer_id,
-                f"🎉 *Congratulations!*\n\n"
-                f"👤 *{user.first_name}* ne aapke referral link se bot join kiya!\n\n"
-                f"✅ *+1 Credit aur +₹{CREDIT_VALUE}* aapke account mein add kar diye gaye hain.\n\n"
-                f"💰 *Aapka Naaya Balance:* ₹{new_balance:.2f}\n\n"
-                f"Aur referrals ke liye apna link share karte rahein! 🚀",
-                parse_mode="Markdown"
-            )
-        except Exception:
-            pass
+        context.user_data["pending_referrer"] = referrer_id
 
     # Check channel membership
     joined = await is_member(context.bot, user.id)
@@ -235,15 +217,19 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"🔒 *Bot Access ke liye Channel Join Zaruri Hai*\n\n"
             f"Hamara channel join karein aur tazaa updates, offers aur "
             f"recharge alerts sabse pehle paayein!\n\n"
+            f"🎁 *Channel join karne par ₹{JOIN_BONUS} ka instant bonus milega!*\n\n"
             f"▶️ Neeche *'Channel Join Karein'* button dabayein,\n"
             f"phir *'Join Ho Gaya'* button dabayein aur bot shuru ho jaayega. ✅",
             parse_mode="Markdown",
             reply_markup=channel_join_keyboard()
         )
-        # Save referrer temporarily
-        if referrer_id:
-            context.user_data["pending_referrer"] = referrer_id
         return
+
+    # Agar already joined hai aur join bonus nahi mila (purane users ke liye)
+    fresh_data = get_user(user.id)
+    if not fresh_data.get("join_bonus_given", False):
+        add_balance(user.id, JOIN_BONUS)
+        update_user(user.id, {"join_bonus_given": True})
 
     await show_main_menu(update, context)
 
@@ -263,6 +249,44 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not joined:
             await query.answer("❌ Aapne abhi channel join nahi kiya!", show_alert=True)
             return
+
+        # Join bonus — sirf ek baar
+        user_data = get_user(user.id)
+        if not user_data.get("join_bonus_given", False):
+            new_balance = add_balance(user.id, JOIN_BONUS)
+            update_user(user.id, {"join_bonus_given": True})
+            # Pending referrer credit (agar referral link se aaya tha)
+            referrer_id = context.user_data.pop("pending_referrer", None)
+            if referrer_id and referrer_id != user.id:
+                referrer_data = get_user(referrer_id)
+                if user.id not in referrer_data.get("referrals", []) and not user_data.get("referred_by"):
+                    ref_new_balance = round(referrer_data["balance"] + CREDIT_VALUE, 2)
+                    ref_new_credits = referrer_data["credits"] + 1
+                    ref_new_earnings = round(referrer_data.get("referral_earnings", 0) + CREDIT_VALUE, 2)
+                    referrals = referrer_data.get("referrals", [])
+                    referrals.append(user.id)
+                    update_user(referrer_id, {
+                        "credits": ref_new_credits,
+                        "balance": ref_new_balance,
+                        "referral_earnings": ref_new_earnings,
+                        "referrals": referrals
+                    })
+                    update_user(user.id, {"referred_by": referrer_id})
+                    try:
+                        await context.bot.send_message(
+                            referrer_id,
+                            f"🎉 *Congratulations!*\n\n"
+                            f"👤 *{user.first_name}* ne aapke referral link se bot join kiya!\n\n"
+                            f"✅ *+1 Credit aur +₹{CREDIT_VALUE}* aapke account mein add ho gaye!\n\n"
+                            f"💰 *Aapka Naaya Balance:* ₹{ref_new_balance:.2f}\n\n"
+                            f"Aur referrals ke liye link share karte rahein! 🚀",
+                            parse_mode="Markdown"
+                        )
+                    except Exception:
+                        pass
+
+            await query.answer(f"🎉 Channel join karne par ₹{JOIN_BONUS} bonus mil gaya!", show_alert=True)
+
         await show_main_menu(update, context, edit=True)
 
     # ── Main Menu ────────────────────────────────────────────────────────────
@@ -272,14 +296,19 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # ── Balance ──────────────────────────────────────────────────────────────
     elif data == "balance":
         user_data = get_user(user.id)
+        total_referrals = len(user_data.get("referrals", []))
+        referral_earnings = user_data.get("referral_earnings", 0)
+        join_bonus = JOIN_BONUS if user_data.get("join_bonus_given", False) else 0
         text = (
             f"💰 *Aapka Balance — Poori Jaankari*\n\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"💵 *Maujuda Balance:*   ₹{user_data['balance']:.2f}\n"
-            f"⭐ *Aapke Credits:*      {user_data['credits']}\n"
-            f"👥 *Kul Referrals:*      {len(user_data.get('referrals', []))}\n"
+            f"💵 *Total Balance:*       ₹{user_data['balance']:.2f}\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"🎁 *Join Bonus:*           ₹{join_bonus:.2f}\n"
+            f"👥 *Referral Kamaai:*      ₹{referral_earnings:.2f}\n"
+            f"🔢 *Kul Referrals:*        {total_referrals}\n"
             f"━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"💡 *1 Credit = ₹{CREDIT_VALUE} Balance*\n\n"
+            f"💡 *Har referral par ₹{CREDIT_VALUE} kamaayein!*\n\n"
             f"Apna referral link zyada se zyada logo mein share karein\n"
             f"aur apna balance badhate rahein! 🚀"
         )
@@ -298,7 +327,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = (
             f"👥 *Referral Program — Muft Kamaayein!*\n\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"🎯 *1 Referral = 1 Credit = ₹{CREDIT_VALUE} Balance*\n"
+            f"🎯 *1 Referral = ₹{CREDIT_VALUE} Balance*\n"
             f"👤 *Aapke Kul Referrals:*  {len(user_data.get('referrals', []))}\n"
             f"━━━━━━━━━━━━━━━━━━━━\n\n"
             f"🔗 *Aapka Referral Link:*\n"
@@ -322,13 +351,14 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = (
             f"ℹ️ *Help & Guide — Poori Jaankari*\n\n"
             f"*📌 Bot Kaise Use Karein?*\n\n"
-            f"1️⃣ Apna referral link copy karein\n"
-            f"2️⃣ Doston aur family mein share karein\n"
-            f"3️⃣ Jab woh /start karein → aapko ₹{CREDIT_VALUE} milega\n"
-            f"4️⃣ Balance aane par *'Recharge Karein'* button dabayein\n"
-            f"5️⃣ Apna 10 digit mobile number enter karein\n"
-            f"6️⃣ Apna operator chunein (Jio / Airtel / Vi / BSNL)\n"
-            f"7️⃣ Plan chunein aur recharge turant ho jaayega!\n\n"
+            f"1️⃣ Channel join karein → *₹{JOIN_BONUS} instant bonus* paayein\n"
+            f"2️⃣ Apna referral link copy karein\n"
+            f"3️⃣ Doston aur family mein share karein\n"
+            f"4️⃣ Jab woh /start karein aur channel join karein → aapko *₹{CREDIT_VALUE}* milega\n"
+            f"5️⃣ Balance aane par *'Recharge Karein'* button dabayein\n"
+            f"6️⃣ Apna 10 digit mobile number enter karein\n"
+            f"7️⃣ Apna operator chunein (Jio / Airtel / Vi / BSNL)\n"
+            f"8️⃣ Plan chunein aur recharge ho jaayega!\n\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
             f"⚠️ *Zaruri Baatein:*\n\n"
             f"• Sirf link bhejne se credit *nahi* milega\n"
@@ -382,7 +412,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await query.edit_message_text(
             f"📋 *{operator} — Recharge Plans*\n\n"
-            f"💰 *Aapka Maujuda Balance:* ₹{balance:.2f}\n\n"
+            f"💰 *Aapka Total Balance:*  ₹{balance:.2f}\n\n"
             f"✅ = Aap yeh plan le sakte hain\n"
             f"❌ = Is plan ke liye balance kam hai\n\n"
             f"Apna plan chunein 👇",
@@ -401,7 +431,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if balance < plan["price"]:
             await query.answer(
-                f"❌ Balance Kam Hai!\n\nIs plan ke liye ₹{plan['price']} chahiye.\nAapka maujuda balance ₹{balance:.2f} hai.\n\nZyada referrals karen aur balance badhayein!",
+                f"❌ Balance Kam Hai!\n\nIs plan ke liye ₹{plan['price']} chahiye.\nAapka total balance ₹{balance:.2f} hai.\n\nZyada referrals karen aur balance badhayein!",
                 show_alert=True
             )
             return
@@ -416,7 +446,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"📦 *Plan:*              {plan['name']}\n"
             f"💵 *Recharge Amount:*  ₹{plan['price']}\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"💰 *Maujuda Balance:*  ₹{balance:.2f}\n"
+            f"💰 *Total Balance:*     ₹{balance:.2f}\n"
             f"💳 *Recharge ke Baad:* ₹{balance - plan['price']:.2f}\n"
             f"━━━━━━━━━━━━━━━━━━━━\n\n"
             f"Kya aap is recharge ko confirm karte hain?",
