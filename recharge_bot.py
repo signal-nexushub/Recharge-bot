@@ -306,7 +306,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"━━━━━━━━━━━━━━━━━━━━\n"
             f"🎁 *Join Bonus:*           ₹{join_bonus:.2f}\n"
             f"👥 *Referral Kamaai:*      ₹{referral_earnings:.2f}\n"
-            f"🔢 *Kul Referrals:*        {total_referrals}\n"
+            f"🔢 *Total Referrals:*        {total_referrals}\n"
             f"━━━━━━━━━━━━━━━━━━━━\n\n"
             f"💡 *Har referral par ₹{CREDIT_VALUE} kamaayein!*\n\n"
             f"Apna referral link zyada se zyada logo mein share karein\n"
@@ -325,10 +325,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ref_link = f"https://t.me/{bot_info.username}?start=ref_{user.id}"
         user_data = get_user(user.id)
         text = (
-            f"👥 *Referral Program — Muft Kamaayein!*\n\n"
+            f"👥 *Referral Program — Free Earning!*\n\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
             f"🎯 *1 Referral = ₹{CREDIT_VALUE} Balance*\n"
-            f"👤 *Aapke Kul Referrals:*  {len(user_data.get('referrals', []))}\n"
+            f"👤 *Aapke Total Referrals:*  {len(user_data.get('referrals', []))}\n"
             f"━━━━━━━━━━━━━━━━━━━━\n\n"
             f"🔗 *Aapka Referral Link:*\n"
             f"`{ref_link}`\n\n"
