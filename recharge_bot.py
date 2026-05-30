@@ -440,6 +440,18 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ]])
         )
 
+    # ── Change Operator ──────────────────────────────────────────────────────
+    elif data == "change_operator":
+        buttons = [[InlineKeyboardButton(op, callback_data=f"op_{op}")] for op in OPERATORS]
+        buttons.append([InlineKeyboardButton("❌ Cancel", callback_data="main_menu")])
+        mobile = context.user_data.get("mobile", "")
+        await query.edit_message_text(
+            f"📡 *Operator Chunein:*\n\n"
+            f"📱 *Mobile Number:* `{mobile}`",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup(buttons)
+        )
+
     # ── Recharge Start ────────────────────────────────────────────────────────
     elif data == "recharge":
         # Check channel membership again
@@ -571,6 +583,43 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 #  CONVERSATION — Number & Operator
 # ═══════════════════════════════════════════════════════════════════════════════
 
+# Operator prefix detection
+OPERATOR_PREFIXES = {
+    "Jio": ["6369","6370","6371","6372","6374","6375","6376","6377","6378","6379",
+            "7481","7482","7483","7484","7485","7486","7487","7488","7489",
+            "8953","8954","8955","8956","8957","8958","8959",
+            "9152","9153","9154","9155","9156","9157","9158","9159",
+            "6291","6292","6293","6294","6295","6296","6297","6298","6299",
+            "7000","7001","7002","7003","7004","7005","7006","7007","7008","7009",
+            "8299","8305","8306","8307","8308","8309",
+            "9026","9027","9028","9029","9220","9221","9222","9223","9224","9225",
+            "6350","6351","6352","6353","6354","6355","6356","6357","6358","6359",
+            "7990","7991","7992","7993","7994","7995","7996","7997","7998","7999"],
+    "Airtel": ["9810","9811","9812","9813","9814","9815","9816","9817","9818","9819",
+               "9868","9869","9870","9871","9872","9873","9958","9999",
+               "8800","8801","8802","8803","8804","8805","8806","8807","8808","8809",
+               "7303","7838","9560","9582","9650","9654","9711","9718","9990","9899",
+               "9313","9315","9316","9317","9318","9319","9320","9321","9322","9323",
+               "7065","7290","7291","7292","7293","7294","7295","7296","7297","7298","7299"],
+    "Vi": ["9820","9821","9822","9823","9824","9825","9826","9827","9828","9829",
+           "9850","9851","9852","9853","9854","9855","9856","9857","9858","9859",
+           "8097","8098","8099","7666","7667","7668","7669",
+           "9930","9931","9932","9933","9934","9935","9936","9937","9938","9939",
+           "7506","7507","7508","7509","8879","8880","8881","8882","8883","8884"],
+    "BSNL": ["9415","9416","9417","9418","9419","9420","9421","9422","9423","9424",
+             "9425","9426","9427","9428","9429","9430","9431","9432","9433","9434",
+             "9435","9436","9437","9438","9439","9440","9441","9442","9443","9444",
+             "9445","9446","9447","9448","9449","9450","9835","9868","9431","9334"],
+}
+
+def detect_operator(number: str) -> str | None:
+    prefix4 = number[:4]
+    prefix5 = number[:5]
+    for operator, prefixes in OPERATOR_PREFIXES.items():
+        if prefix4 in prefixes or prefix5 in prefixes:
+            return operator
+    return None
+
 async def ask_number(update: Update, context: ContextTypes.DEFAULT_TYPE):
     number = update.message.text.strip()
     # Indian mobile numbers: 10 digits, starting with 6, 7, 8, or 9
@@ -585,18 +634,33 @@ async def ask_number(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return ASK_NUMBER
 
     context.user_data["mobile"] = number
+    detected = detect_operator(number)
 
-    # Show operator selection
-    buttons = [[InlineKeyboardButton(op, callback_data=f"op_{op}")] for op in OPERATORS]
-    buttons.append([InlineKeyboardButton("❌ Cancel", callback_data="main_menu")])
-
-    await update.message.reply_text(
-        f"✅ *Number Darj Ho Gaya!*\n\n"
-        f"📱 *Aapka Number:* `{number}`\n\n"
-        f"📡 *Step 2 of 3 — Apna Operator Chunein:*",
-        parse_mode="Markdown",
-        reply_markup=InlineKeyboardMarkup(buttons)
-    )
+    if detected:
+        context.user_data["operator"] = detected
+        await update.message.reply_text(
+            f"✅ *Number Darj Ho Gaya!*\n\n"
+            f"📱 *Mobile Number:* `{number}`\n"
+            f"📡 *Operator:* {detected}\n\n"
+            f"Kya yeh sahi hai?",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🔄 Change Operator", callback_data="change_operator"),
+                 InlineKeyboardButton("🔄 Change Number", callback_data="recharge"),
+                 InlineKeyboardButton("✅ Confirm", callback_data=f"op_{detected}")]
+            ])
+        )
+    else:
+        # Operator detect nahi hua, manual select
+        buttons = [[InlineKeyboardButton(op, callback_data=f"op_{op}")] for op in OPERATORS]
+        buttons.append([InlineKeyboardButton("❌ Cancel", callback_data="main_menu")])
+        await update.message.reply_text(
+            f"✅ *Number Darj Ho Gaya!*\n\n"
+            f"📱 *Aapka Number:* `{number}`\n\n"
+            f"📡 *Apna Operator Chunein:*",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup(buttons)
+        )
     return ConversationHandler.END
 
 async def menu_button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
