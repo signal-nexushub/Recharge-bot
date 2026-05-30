@@ -8,6 +8,7 @@ import os
 import json
 import random
 from datetime import datetime
+from pymongo import MongoClient
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
 from telegram.ext import (
     Application, CommandHandler, CallbackQueryHandler,
@@ -21,6 +22,7 @@ ADMIN_ID        = 1522324770
 CREDIT_VALUE    = 20                # 1 referral = ₹20 balance
 JOIN_BONUS      = 10                # channel join karne par ₹10 (sirf ek baar)
 DB_FILE         = "users.json"      # Data store (simple file-based)
+MONGO_URI       = os.environ.get("MONGO_URI", None)
 
 # ─── CONVERSATION STATES ──────────────────────────────────────────────────────
 VERIFY, ASK_NUMBER, ASK_OPERATOR, SHOW_PLANS = range(4)
@@ -127,32 +129,68 @@ DATA_PACKS = {
 OPERATORS = list(PLANS.keys())
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  DATABASE HELPERS (simple JSON file)
+#  DATABASE HELPERS (MongoDB + JSON fallback)
 # ═══════════════════════════════════════════════════════════════════════════════
 
+# MongoDB setup
+_mongo_col = None
+def get_mongo_col():
+    global _mongo_col
+    if _mongo_col is None and MONGO_URI:
+        client = MongoClient(MONGO_URI)
+        _mongo_col = client["freerecharge"]["users"]
+    return _mongo_col
+
+DEFAULT_USER = lambda: {"credits": 0, "balance": 0, "referral_earnings": 0, "referrals": [], "referred_by": None, "join_bonus_given": False, "recharge_history": [], "verified": False}
+
 def load_db():
+    col = get_mongo_col()
+    if col is not None:
+        users = {}
+        for doc in col.find():
+            uid = doc.pop("_id")
+            users[str(uid)] = doc
+        return users
     if os.path.exists(DB_FILE):
         with open(DB_FILE, "r") as f:
             return json.load(f)
     return {}
 
 def save_db(db):
+    col = get_mongo_col()
+    if col is not None:
+        return  # MongoDB me individual save hota hai
     with open(DB_FILE, "w") as f:
         json.dump(db, f, indent=2)
 
 def get_user(user_id: int):
-    db = load_db()
     uid = str(user_id)
+    col = get_mongo_col()
+    if col is not None:
+        doc = col.find_one({"_id": uid})
+        if not doc:
+            new_user = DEFAULT_USER()
+            new_user["_id"] = uid
+            col.insert_one(new_user)
+            new_user.pop("_id")
+            return new_user
+        doc.pop("_id")
+        return doc
+    db = load_db()
     if uid not in db:
-        db[uid] = {"credits": 0, "balance": 0, "referral_earnings": 0, "referrals": [], "referred_by": None, "join_bonus_given": False, "recharge_history": []}
+        db[uid] = DEFAULT_USER()
         save_db(db)
     return db[uid]
 
 def update_user(user_id: int, data: dict):
-    db = load_db()
     uid = str(user_id)
+    col = get_mongo_col()
+    if col is not None:
+        col.update_one({"_id": uid}, {"$set": data}, upsert=True)
+        return
+    db = load_db()
     if uid not in db:
-        db[uid] = {"credits": 0, "balance": 0, "referral_earnings": 0, "referrals": [], "referred_by": None, "join_bonus_given": False, "recharge_history": []}
+        db[uid] = DEFAULT_USER()
     db[uid].update(data)
     save_db(db)
 
