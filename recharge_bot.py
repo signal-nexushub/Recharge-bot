@@ -7,6 +7,7 @@ import logging
 import os
 import json
 import random
+from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
 from telegram.ext import (
     Application, CommandHandler, CallbackQueryHandler,
@@ -143,7 +144,7 @@ def get_user(user_id: int):
     db = load_db()
     uid = str(user_id)
     if uid not in db:
-        db[uid] = {"credits": 0, "balance": 0, "referral_earnings": 0, "referrals": [], "referred_by": None, "join_bonus_given": False}
+        db[uid] = {"credits": 0, "balance": 0, "referral_earnings": 0, "referrals": [], "referred_by": None, "join_bonus_given": False, "recharge_history": []}
         save_db(db)
     return db[uid]
 
@@ -151,7 +152,7 @@ def update_user(user_id: int, data: dict):
     db = load_db()
     uid = str(user_id)
     if uid not in db:
-        db[uid] = {"credits": 0, "balance": 0, "referral_earnings": 0, "referrals": [], "referred_by": None, "join_bonus_given": False}
+        db[uid] = {"credits": 0, "balance": 0, "referral_earnings": 0, "referrals": [], "referred_by": None, "join_bonus_given": False, "recharge_history": []}
     db[uid].update(data)
     save_db(db)
 
@@ -202,7 +203,8 @@ def main_menu_keyboard():
         [InlineKeyboardButton("💰 My Balance", callback_data="balance"),
          InlineKeyboardButton("👥 Refer & Earn", callback_data="referral")],
         [InlineKeyboardButton("📊 My Stats", callback_data="stats"),
-         InlineKeyboardButton("ℹ️ Help", callback_data="help")]
+         InlineKeyboardButton("ℹ️ Help", callback_data="help")],
+        [InlineKeyboardButton("📋 Recharge History", callback_data="history")]
     ])
 
 async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, edit=False):
@@ -510,6 +512,30 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ]])
         )
 
+    # ── Recharge History ─────────────────────────────────────────────────────
+    elif data == "history":
+        user_data = get_user(user.id)
+        history = user_data.get("recharge_history", [])
+        if not history:
+            text = "📋 *Recharge History*\n\nKoi recharge history nahi mili."
+        else:
+            text = "📋 *Recharge History*\n\n"
+            for i, h in enumerate(history, 1):
+                text += (
+                    f"{i}. 📱 `{h['mobile']}`\n"
+                    f"   📡 {h['operator']} | 💵 ₹{h['amount']}\n"
+                    f"   📦 {h['plan']}\n"
+                    f"   {h['status']} — {h['reason']}\n"
+                    f"   📅 {h['date']}\n\n"
+                )
+        await query.edit_message_text(
+            text,
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("🔙 Back", callback_data="main_menu")
+            ]])
+        )
+
     # ── Help ─────────────────────────────────────────────────────────────────
     elif data == "help":
         text = (
@@ -730,19 +756,34 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Deduct balance
         new_balance = deduct_balance(user.id, plan["price"])
 
-        # Show success
+        # Save to history as Failed
+        now = datetime.now().strftime("%d %b %Y | %I:%M %p")
+        history_entry = {
+            "mobile": mobile,
+            "operator": operator,
+            "plan": plan["name"],
+            "amount": plan["price"],
+            "status": "❌ Failed",
+            "reason": "You selected the wrong operator.",
+            "date": now
+        }
+        user_data2 = get_user(user.id)
+        history = user_data2.get("recharge_history", [])
+        history.insert(0, history_entry)
+        update_user(user.id, {"recharge_history": history[:10]})
+
+        # Show Successful on screen
         await query.edit_message_text(
             f"✅ *Recharge Successful!*\n\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
             f"📱 *Mobile Number:*     `{mobile}`\n"
             f"📡 *Operator:*           {operator}\n"
-            f"📦 *Plan:*               {plan['name']}\n"
+            f"📦 *Plan:*\n{plan['name']}\n"
             f"💵 *Debited Amount:* ₹{plan['price']}\n"
             f"💰 *Bacha Hua Balance:* ₹{new_balance:.2f}\n"
             f"━━━━━━━━━━━━━━━━━━━━\n\n"
             f"🎉 *Recharge Complete!*\n"
-            f"Aapka plan kuch hi der mein aapke number par active ho jaayega.\n\n"
-            f"",
+            f"Aapka plan kuch hi der mein aapke number par active ho jaayega.",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("🔄 Recharge Again", callback_data="recharge")],
