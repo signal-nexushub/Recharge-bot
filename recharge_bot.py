@@ -517,7 +517,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_data = get_user(user.id)
         history = user_data.get("recharge_history", [])
         if not history:
-            text = "📋 *Recharge History*\n\nKoi recharge history nahi mili."
+            text = "📋 *Recharge History*\n\nApne Abhi Tak Koi Recharge Nhi Kiya Hai."
         else:
             text = "📋 *Recharge History*\n\n"
             for i, h in enumerate(history, 1):
@@ -531,9 +531,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(
             text,
             parse_mode="Markdown",
-            reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("🔙 Back", callback_data="main_menu")
-            ]])
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("⚡ Recharge", callback_data="recharge"),
+                 InlineKeyboardButton("🔙 Back", callback_data="main_menu")]
+            ])
         )
 
     # ── Help ─────────────────────────────────────────────────────────────────
