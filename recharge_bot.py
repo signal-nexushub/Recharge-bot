@@ -600,7 +600,7 @@ async def ask_number(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def menu_button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await show_main_menu(update, context)
 
-
+async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "❌ *Recharge Raddh Kar Di Gayi.*\n\nMain Menu se dobara shuru kar sakte hain.",
         parse_mode="Markdown",
