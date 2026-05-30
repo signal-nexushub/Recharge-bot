@@ -157,7 +157,7 @@ def bottom_menu_keyboard():
 
 def main_menu_keyboard():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("⚡ Get Recharge", callback_data="recharge")],
+        [InlineKeyboardButton("⚡ Get Free Recharge", callback_data="recharge")],
         [InlineKeyboardButton("💸 Earn ₹ Rupees", callback_data="earn")],
         [InlineKeyboardButton("💰 My Balance", callback_data="balance"),
          InlineKeyboardButton("👥 Refer & Earn", callback_data="referral")],
@@ -421,7 +421,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"2️⃣ Apna referral link copy karein\n"
             f"3️⃣ Doston aur family mein share karein\n"
             f"4️⃣ Jab woh /start karein aur channel join karein → aapko *₹{CREDIT_VALUE}* milega\n"
-            f"5️⃣ Balance aane par *'Get Recharge'* button dabayein\n"
+            f"5️⃣ Balance aane par *'Get Free Recharge'* button dabayein\n"
             f"6️⃣ Apna 10 digit mobile number enter karein\n"
             f"7️⃣ Apna operator chunein (Jio / Airtel / Vi / BSNL)\n"
             f"8️⃣ Plan chunein aur recharge ho jaayega!\n\n"
