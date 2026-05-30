@@ -728,12 +728,12 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"📱 *Mobile Number:*     `{mobile}`\n"
             f"📡 *Operator:*           {operator}\n"
             f"📦 *Plan:*               {plan['name']}\n"
-            f"💵 *Katauti Hui Raqam:* ₹{plan['price']}\n"
+            f"💵 *Debited Amount:* ₹{plan['price']}\n"
             f"💰 *Bacha Hua Balance:* ₹{new_balance:.2f}\n"
             f"━━━━━━━━━━━━━━━━━━━━\n\n"
             f"🎉 *Recharge Complete!*\n"
             f"Aapka plan kuch hi der mein aapke number par active ho jaayega.\n\n"
-            f"_(Yeh ek demo recharge hai — asli recharge nahi hua)_",
+            f"",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("🔄 Recharge Again", callback_data="recharge")],
