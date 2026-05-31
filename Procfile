@@ -1,1 +1,1 @@
-worker: pip install --upgrade python-telegram-bot==21.3 pymongo==4.6.1 dnspython==2.4.2 && python recharge_bot.py
+worker: python recharge_bot.py
